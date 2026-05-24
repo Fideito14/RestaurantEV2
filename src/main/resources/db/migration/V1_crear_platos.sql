@@ -1,0 +1,7 @@
+CREATE TABLE IF NO EXISTS platos (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(300),
+    precio DOUBLE NOT NULL,
+    disponible TINYINY(1) NOT NULL DEFAULT 1
+);
