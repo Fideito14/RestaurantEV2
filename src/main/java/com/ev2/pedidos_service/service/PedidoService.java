@@ -7,6 +7,8 @@ import com.ev2.pedidos_service.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -17,6 +19,9 @@ import java.util.stream.Collectors;
 public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
+    private final RestTemplate restTemplate;
+
+    private static final String MENU_SERVICE_URL = "http://localhost:8081/api/platos/";
 
     private PedidoResponseDTO mapToDTO(Pedido p) {
         return new PedidoResponseDTO(
@@ -26,6 +31,15 @@ public class PedidoService {
                 p.getMesa(),
                 p.getEstado()
         );
+    }
+
+    private void validarPlatoExiste(Long platoId) {
+        try {
+            log.info(">>> Validando plato con id: {} en menu-service", platoId);
+            restTemplate.getForObject(MENU_SERVICE_URL + platoId, Object.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new RuntimeException("El plato con id " + platoId + " no existe en el menú");
+        }
     }
 
     public List<PedidoResponseDTO> obtenerTodos() {
@@ -66,6 +80,7 @@ public class PedidoService {
     }
 
     public PedidoResponseDTO guardar(PedidoRequestDTO dto) {
+        validarPlatoExiste(dto.getPlatoId());
         log.info(">>> Creando pedido para mesa: {}", dto.getMesa());
         Pedido pedido = new Pedido(
                 null,
@@ -78,6 +93,7 @@ public class PedidoService {
     }
 
     public Optional<PedidoResponseDTO> actualizar(Long id, PedidoRequestDTO dto) {
+        validarPlatoExiste(dto.getPlatoId());
         log.info(">>> Actualizando pedido con id: {}", id);
         return pedidoRepository.findById(id).map(existente -> {
             existente.setPlatoId(dto.getPlatoId());
