@@ -1,0 +1,19 @@
+package com.restaurant.mesa.repository;
+
+import com.restaurant.mesa.model.Reserva;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+
+public interface ReservaRepository extends JpaRepository<Reserva, Long> {
+
+    // Buscar reservas por usuario
+    List<Reserva> findByUsuarioId(Long usuarioId);
+
+    // Buscar reservas por mesa
+    List<Reserva> findByMesaId(Long mesaId);
+
+    // Buscar reservas por estado (activa, cancelada, finalizada)
+    List<Reserva> findByEstado(String estado);
+}

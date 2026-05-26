@@ -1,0 +1,100 @@
+package com.restaurant.mesa.Service;
+
+import com.restaurant.mesa.client.UsuarioClient;
+import com.restaurant.mesa.dto.MesaDTO;
+import com.restaurant.mesa.dto.UsuarioDTO;
+import com.restaurant.mesa.model.Mesa;
+import com.restaurant.mesa.repository.MesaRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class MesaService {
+
+    private final MesaRepository mesaRepository;
+    private final UsuarioClient usuarioClient;
+
+
+
+    // Crear mesa con validación de usuario
+    public Mesa crearMesa(MesaDTO dto) {
+        try {
+            if (dto.getUsuarioId() != null) {
+                try {
+                    usuarioClient.getUsuarioById(dto.getUsuarioId()); // valida que exista
+                } catch (Exception e) {
+                    throw new RuntimeException("Usuario no existe en el microservicio de Clientes");
+                }
+            }
+            Mesa mesa = new Mesa(null, dto.getNumero(), dto.getEstado(), dto.getUsuarioId());
+            return mesaRepository.save(mesa);
+        } catch (Exception e) {
+            log.error("Error al crear mesa", e);
+            throw e;
+        }
+    }
+
+
+
+    // Listar todas las mesas
+    public List<Mesa> listarMesas() {
+        try {
+            return mesaRepository.findAll();
+        } catch (Exception e) {
+            log.error("Error al listar mesas", e);
+            return Collections.emptyList();
+        }
+    }
+
+    // Cambiar estado de una mesa
+    public Mesa cambiarEstado(Long id, String estado, Long usuarioId) {
+        Mesa mesa = mesaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+
+        if ("reservada".equalsIgnoreCase(estado)) {
+            if (usuarioId == null) {
+                throw new IllegalArgumentException("Debe indicar usuarioId para reservar");
+            }
+
+            // 🔎 Validar rol del usuario en el microservicio de Usuarios
+            UsuarioDTO usuario = usuarioClient.getUsuarioById(usuarioId);
+            if (usuario == null) {
+                throw new RuntimeException("Usuario no existe en el microservicio de Usuarios");
+            }
+            if (!"CLIENTE".equalsIgnoreCase(usuario.getRol())) {
+                throw new IllegalArgumentException("El usuario no tiene rol CLIENTE, no puede reservar");
+            }
+
+            mesa.setEstado("reservada");
+            mesa.setUsuarioId(usuarioId);
+
+        } else if ("libre".equalsIgnoreCase(estado)) {
+            mesa.setEstado("libre");
+            mesa.setUsuarioId(null); // 🔑 limpiar usuario al liberar
+
+        } else if ("ocupado".equalsIgnoreCase(estado)) {
+            if (usuarioId == null) {
+                throw new IllegalArgumentException("Debe indicar usuarioId para ocupar");
+            }
+            mesa.setEstado("ocupado");
+            mesa.setUsuarioId(usuarioId);
+        } else {
+            throw new IllegalArgumentException("Estado inválido: " + estado);
+        }
+
+        return mesaRepository.save(mesa);
+    }
+
+
+
+
+
+}
+

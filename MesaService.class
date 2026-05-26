@@ -1,0 +1,131 @@
+package com.restaurant.mesa.Service;
+
+import com.restaurant.mesa.client.UsuarioClient;
+import com.restaurant.mesa.dto.UsuarioDTO;
+import com.restaurant.mesa.model.Mesa;
+import com.restaurant.mesa.model.Reserva;
+import com.restaurant.mesa.repository.MesaRepository;
+import com.restaurant.mesa.repository.ReservaRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+@Slf4j
+@Service
+public class ReservaService {
+
+    private final ReservaRepository reservaRepository;
+    private final MesaRepository mesaRepository;
+    private final UsuarioClient usuarioClient;
+
+    public ReservaService(ReservaRepository reservaRepository, MesaRepository mesaRepository, UsuarioClient usuarioClient) {
+        this.reservaRepository = reservaRepository;
+        this.mesaRepository = mesaRepository;
+        this.usuarioClient = usuarioClient;
+    }
+
+    // Crear una reserva
+    public Reserva crearReserva(Long mesaId, Long usuarioId) {
+        UsuarioDTO usuario = usuarioClient.getUsuarioById(usuarioId);
+        if (usuario == null) {
+            throw new RuntimeException("Usuario no existe en el microservicio de Usuarios");
+        }
+        if (!"CLIENTE".equals(usuario.getRol())) {
+            throw new IllegalArgumentException("El usuario no tiene rol CLIENTE, no puede reservar");
+        }
+
+        Mesa mesa = mesaRepository.findById(mesaId)
+                .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+
+        if (!"libre".equalsIgnoreCase(mesa.getEstado())) {
+            throw new IllegalArgumentException("La mesa no está disponible para reservar");
+        }
+
+        // Fecha automática
+        Reserva reserva = new Reserva(null, usuarioId, mesaId, LocalDateTime.now(), "activa");
+
+        mesa.setEstado("reservado");
+        mesa.setUsuarioId(usuarioId);
+        mesaRepository.save(mesa);
+
+        return reservaRepository.save(reserva);
+    }
+
+
+
+
+    // Cancelar una reserva
+    public Optional<Reserva> cancelarReserva(Long reservaId) {
+        try {
+            Reserva reserva = reservaRepository.findById(reservaId)
+                    .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+            reserva.setEstado("cancelada");
+
+            Mesa mesa = mesaRepository.findById(reserva.getMesaId())
+                    .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+            mesa.setEstado("libre");
+            mesa.setUsuarioId(null);
+            mesaRepository.save(mesa);
+
+            return Optional.of(reservaRepository.save(reserva));
+        } catch (Exception e) {
+            log.error("Error al cancelar reserva con id {}", reservaId, e);
+            return Optional.empty();
+        }
+    }
+
+    // Finalizar una reserva
+    public Optional<Reserva> finalizarReserva(Long reservaId) {
+        try {
+            Reserva reserva = reservaRepository.findById(reservaId)
+                    .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+            reserva.setEstado("finalizada");
+
+            Mesa mesa = mesaRepository.findById(reserva.getMesaId())
+                    .orElseThrow(() -> new RuntimeException("Mesa no encontrada"));
+            mesa.setEstado("libre");
+            mesa.setUsuarioId(null);
+            mesaRepository.save(mesa);
+
+            return Optional.of(reservaRepository.save(reserva));
+        } catch (Exception e) {
+            log.error("Error al finalizar reserva con id {}", reservaId, e);
+            return Optional.empty();
+        }
+    }
+
+    // Listar reservas por mesa
+    public List<Reserva> listarReservasPorMesa(Long mesaId) {
+        try {
+            return reservaRepository.findByMesaId(mesaId);
+        } catch (Exception e) {
+            log.error("Error al listar reservas de la mesa {}", mesaId, e);
+            return Collections.emptyList();
+        }
+    }
+
+    // Listar reservas por usuario
+    public List<Reserva> listarReservasPorUsuario(Long usuarioId) {
+        try {
+            return reservaRepository.findByUsuarioId(usuarioId);
+        } catch (Exception e) {
+            log.error("Error al listar reservas del usuario {}", usuarioId, e);
+            return Collections.emptyList();
+        }
+    }
+
+    //Listar todas las reservas
+    public List<Reserva> listarReservas() {
+        try {
+            return reservaRepository.findAll();
+        } catch (Exception e) {
+            log.error("Error al listar reservas", e);
+            return Collections.emptyList();
+        }
+    }
+
+}
