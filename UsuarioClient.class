@@ -1,0 +1,31 @@
+package com.restaurant.mesa.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ReservaDTO {
+
+    private Long id;
+
+    @NotNull(message = "El numero de mesa es obligatorio")
+    private Integer mesaNumero;
+
+    @NotNull(message = "El usuario es obligatorio")
+    private Long usuarioId;
+
+    private LocalDateTime fecha;
+
+    @NotBlank(message = "El estado de la reserva es obligatorio")
+    @Pattern(regexp = "activa|cancelada|finalizada", message = "El estado de la reserva debe ser activa, cancelada o finalizada")
+    private String estado;
+
+}

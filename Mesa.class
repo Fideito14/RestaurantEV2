@@ -1,0 +1,14 @@
+package com.restaurant.mesa.repository;
+
+import com.restaurant.mesa.model.Mesa;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+
+import java.util.List;
+public interface MesaRepository extends JpaRepository<Mesa, Long> {
+
+    List<Mesa> findByEstado(String estado);
+
+    // Buscar mesa por número
+    Mesa findByNumero(Integer numero);
+}

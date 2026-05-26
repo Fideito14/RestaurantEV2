@@ -1,0 +1,8 @@
+CREATE TABLE pagos(
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    monto DOUBLE NOT NULL,
+    fecha DATETIME NOT NULL,
+    metodo VARCHAR(20) NOT NULL,
+    pedido_id BIGINT NOT NULL,
+    estado VARCHAR(20) NOT NULL
+);
