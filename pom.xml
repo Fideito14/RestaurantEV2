@@ -48,9 +48,6 @@
 			<version>2.8.9</version>
 		</dependency>
 
-		<!-- Eureka Client -->
-
-
 		<!-- Data Faker -->
 		<dependency>
 			<groupId>net.datafaker</groupId>
@@ -97,7 +94,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 
 	<build>
 		<plugins>
