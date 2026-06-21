@@ -5,10 +5,14 @@ import com.ev2.pedidos_service.dto.PedidoResponseDTO;
 import com.ev2.pedidos_service.service.PedidoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -17,56 +21,69 @@ public class PedidoController {
 
     private final PedidoService pedidoService;
 
-    // GET /api/pedidos
-    @GetMapping
-    public List<PedidoResponseDTO> obtenerTodos() {
-        return pedidoService.obtenerTodos();
+    private EntityModel<PedidoResponseDTO> toModel(PedidoResponseDTO dto) {
+        return EntityModel.of(dto,
+                linkTo(methodOn(PedidoController.class).obtenerPorId(dto.getId())).withSelfRel(),
+                linkTo(methodOn(PedidoController.class).obtenerTodos()).withRel("pedidos"),
+                linkTo(methodOn(PedidoController.class).obtenerPorMesa(dto.getMesa())).withRel("pedidos-mesa"),
+                linkTo(methodOn(PedidoController.class).eliminar(dto.getId())).withRel("eliminar")
+        );
     }
 
-    // GET /api/pedidos/{id}
+    @GetMapping
+    public CollectionModel<EntityModel<PedidoResponseDTO>> obtenerTodos() {
+        List<EntityModel<PedidoResponseDTO>> pedidos = pedidoService.obtenerTodos()
+                .stream().map(this::toModel).collect(Collectors.toList());
+        return CollectionModel.of(pedidos,
+                linkTo(methodOn(PedidoController.class).obtenerTodos()).withSelfRel());
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<PedidoResponseDTO> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<EntityModel<PedidoResponseDTO>> obtenerPorId(@PathVariable Long id) {
         return pedidoService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
+                .map(dto -> ResponseEntity.ok(toModel(dto)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET /api/pedidos/estado?estado=PENDIENTE
     @GetMapping("/estado")
-    public List<PedidoResponseDTO> obtenerPorEstado(@RequestParam String estado) {
-        return pedidoService.obtenerPorEstado(estado);
+    public CollectionModel<EntityModel<PedidoResponseDTO>> obtenerPorEstado(@RequestParam String estado) {
+        List<EntityModel<PedidoResponseDTO>> pedidos = pedidoService.obtenerPorEstado(estado)
+                .stream().map(this::toModel).collect(Collectors.toList());
+        return CollectionModel.of(pedidos,
+                linkTo(methodOn(PedidoController.class).obtenerPorEstado(estado)).withSelfRel());
     }
 
-    // GET /api/pedidos/mesa?mesa=5
     @GetMapping("/mesa")
-    public List<PedidoResponseDTO> obtenerPorMesa(@RequestParam Integer mesa) {
-        return pedidoService.obtenerPorMesa(mesa);
+    public CollectionModel<EntityModel<PedidoResponseDTO>> obtenerPorMesa(@RequestParam Integer mesa) {
+        List<EntityModel<PedidoResponseDTO>> pedidos = pedidoService.obtenerPorMesa(mesa)
+                .stream().map(this::toModel).collect(Collectors.toList());
+        return CollectionModel.of(pedidos,
+                linkTo(methodOn(PedidoController.class).obtenerPorMesa(mesa)).withSelfRel());
     }
 
-    // GET /api/pedidos/plato/{platoId}
     @GetMapping("/plato/{platoId}")
-    public List<PedidoResponseDTO> obtenerPorPlatoId(@PathVariable Long platoId) {
-        return pedidoService.obtenerPorPlatoId(platoId);
+    public CollectionModel<EntityModel<PedidoResponseDTO>> obtenerPorPlatoId(@PathVariable Long platoId) {
+        List<EntityModel<PedidoResponseDTO>> pedidos = pedidoService.obtenerPorPlatoId(platoId)
+                .stream().map(this::toModel).collect(Collectors.toList());
+        return CollectionModel.of(pedidos,
+                linkTo(methodOn(PedidoController.class).obtenerPorPlatoId(platoId)).withSelfRel());
     }
 
-    // POST /api/pedidos
     @PostMapping
-    public ResponseEntity<PedidoResponseDTO> crear(@Valid @RequestBody PedidoRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(pedidoService.guardar(dto));
+    public ResponseEntity<EntityModel<PedidoResponseDTO>> crear(@Valid @RequestBody PedidoRequestDTO dto) {
+        EntityModel<PedidoResponseDTO> model = toModel(pedidoService.guardar(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(model);
     }
 
-    // PUT /api/pedidos/{id}
     @PutMapping("/{id}")
-    public ResponseEntity<PedidoResponseDTO> actualizar(
+    public ResponseEntity<EntityModel<PedidoResponseDTO>> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody PedidoRequestDTO dto) {
         return pedidoService.actualizar(id, dto)
-                .map(ResponseEntity::ok)
+                .map(updated -> ResponseEntity.ok(toModel(updated)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE /api/pedidos/{id}
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         pedidoService.eliminar(id);

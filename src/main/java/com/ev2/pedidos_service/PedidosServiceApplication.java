@@ -5,7 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+		org.springdoc.core.configuration.SpringDocHateoasConfiguration.class
+})
 public class PedidosServiceApplication {
 
 	public static void main(String[] args) {
@@ -13,7 +15,7 @@ public class PedidosServiceApplication {
 	}
 
 	@Bean
-	public RestTemplate restTemplate(){
+	public RestTemplate restTemplate() {
 		return new RestTemplate();
 	}
 }
