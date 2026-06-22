@@ -8,13 +8,23 @@ spring:
     gateway:
       server:
         webflux:
+          discovery:
+            locator:
+              enabled: true
           routes:
             - id: menu-service
-              uri: http://menu-service:8081
+              uri: lb://MENU-SERVICE
               predicates:
                 - Path=/api/platos/**
 
             - id: pedidos-service
-              uri: http://pedidos-service:8082
+              uri: lb://PEDIDOS-SERVICE
               predicates:
                 - Path=/api/pedidos/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
