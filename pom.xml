@@ -80,6 +80,12 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!-- Load Balancer (necesario para @LoadBalanced con RestTemplate) -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
+		</dependency>
+
 		<!-- DevTools -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

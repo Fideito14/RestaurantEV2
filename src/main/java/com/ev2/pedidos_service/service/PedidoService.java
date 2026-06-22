@@ -21,7 +21,7 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final RestTemplate restTemplate;
 
-    private static final String MENU_SERVICE_URL = "http://localhost:8081/api/platos/";
+    private static final String MENU_SERVICE_URL = "http://MENU-SERVICE/api/platos/";
 
     private PedidoResponseDTO mapToDTO(Pedido p) {
         return new PedidoResponseDTO(
